@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[3]:
-
-
 import os
 import math, sys
 import numpy as np
@@ -17,8 +11,6 @@ from keras.utils.vis_utils import plot_model
 
 from ipynb.fs.full.multi_head_attention import MULTI_HEAD_ATTENTION
 
-
-# In[14]:
 
 
 class RESIDUAL_CONVOLUTION_1D(tf.keras.layers.Layer):
@@ -76,28 +68,5 @@ class RESIDUAL_CONVOLUTION_1D(tf.keras.layers.Layer):
         Activation(self.activation)(x)
         
         return x
-
-
-# In[ ]:
-
-
-
-
-
-# In[10]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
 
 
