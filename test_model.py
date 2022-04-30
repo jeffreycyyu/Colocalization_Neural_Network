@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[32]:
-
-
 import os
 import math, sys
 import numpy as np
@@ -21,9 +15,6 @@ from keras.utils.vis_utils import plot_model
 #randomly generate 5 vectors which represent the 5 trait's p-values for 100 loci each
 specify_input_shape = (400, 100, 5)
 test_input = np.random.random(specify_input_shape)
-
-
-# In[33]:
 
 
 #MULTI_HEAD_ATTENTION
@@ -116,20 +107,3 @@ model.fit(test_input, test_input, epochs=10)
 #save model summary
 with open('modelsummary.txt', 'w') as f:
     model.summary(print_fn=lambda x: f.write(x + '\n'))
-
-
-#show model diagram
-#plot_model(model, to_file='demo.png', show_shapes=True)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
