@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import math, sys
 import numpy as np
 import pandas as pd
@@ -126,11 +120,4 @@ class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
         else: raise ValueError("Invalid activation_function")
         
         return self.output_array
-    
-
-
-# In[ ]:
-
-
-
 
