@@ -1,10 +1,17 @@
-import sys
+import numpy as np
 import pandas as pd
 import random
-import numpy as np
+import matplotlib.pyplot as plt
+from pandas import DataFrame as df
 import tensorflow as tf
+import tensorflow_probability as tfp
+from tensorflow.keras.layers import Input, Embedding, Activation, Add, Conv1D, Conv1DTranspose, LSTM, Layer, LayerNormalization, ReLU, Embedding, Bidirectional
 from keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.layers import Embedding
+import tensorflow_addons as tfa
+from tensorflow.keras.models import Model, Sequential
+from keras.utils.vis_utils import plot_model
+import edward2 as ed
+import warnings
 
 #import datafram from txt file
 test_dataframe = pd.read_csv('/Users/jeffreyyu/Documents/Sladek/colocalization_neural_network/simulated_gwas.txt', sep='\t')
@@ -49,8 +56,6 @@ def find_max_list(list):
 
 #maximum number of loci per sample gene segment
 maximum_length = find_max_list(test_input)
-#number of traits simulated
-n_traits = padded_test_input.shape[2]
 
 
 #number of loci and number of channels of each sample (sanity)
@@ -59,6 +64,11 @@ for i in range(0, n_samples):
     print(test_input[i].shape)
 #pad input list of samples 
 padded_test_input = pad_sequences(test_input, padding='post', dtype='float64')
+
+#number of traits simulated
+n_traits = padded_test_input.shape[2]
+
+
 #number of loci and number of channels of each sample after padding (sanity)
 print('after padding:')
 for i in range(0, n_samples):
@@ -80,13 +90,26 @@ embedded_indices = position_embedding_layer(position_indices)
 print(embedded_indices)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #add positional encoding to the padded test imputs
-for i in range(0, n_samples):
-    padded_test_input[i] + embedded_indices
+for i in range(0, n_samples-1):
+    padded_test_input[i] = tf.convert_to_tensor(padded_test_input[i]) + tf.cast(embedded_indices.numpy(), 'float64')
 #reassign to new name
 positional_embedded_padded_test_input = padded_test_input
     
-#number of samples (sanity)
+#number of samples (padded_test_inputanity)
 print(len(positional_embedded_padded_test_input))
 #positional embedding (sanity)
 print('after positional embedding:')
