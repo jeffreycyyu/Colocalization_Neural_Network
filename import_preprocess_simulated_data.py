@@ -15,6 +15,8 @@ from keras.utils.vis_utils import plot_model
 import edward2 as ed
 import warnings
 
+random.seed(25252)
+
 #import datafram from txt file
 test_dataframe = pd.read_csv('/Users/jeffreyyu/Documents/Sladek/colocalization_neural_network/simulated_gwas.txt', sep='\t')
 #remove heading name
@@ -96,3 +98,4 @@ positional_embedded_padded_test_input = padded_test_input
 # print('after positional embedding:')
 # print(tf.size(positional_embedded_padded_test_input))
 print(positional_embedded_padded_test_input)
+
