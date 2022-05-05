@@ -105,16 +105,18 @@ for (i in 1:n_samples) {
   
   
   #add to list
-  list_of_samples[[i]] <- c(unlist(output_p_value_formal_1), unlist(output_p_value_formal_2), unlist(output_p_value_formal_3))
+  list_of_samples[[i]] <- cbind(unlist(output_p_value_formal_1), unlist(output_p_value_formal_2), unlist(output_p_value_formal_3))
   
 }
+
+list_of_samples_binded <- do.call(rbind, list_of_samples)
 
 
 
 #save as data table
-df <- data.frame(c(1:(300*n_samples)), unlist(list_of_samples))
+df <- data.frame(c(1:(300*n_samples)), list_of_samples_binded)
 
-write.table(df,"filename.txt",sep="\t",row.names=FALSE)
+write.table(df,"simulated_gwas.txt",sep="\t",row.names=FALSE)
 
 
 
@@ -186,4 +188,5 @@ write.table(df,"filename.txt",sep="\t",row.names=FALSE)
 # 
 # plot(1:nsnps,zexp); abline(v=which(snps %in% CV),col="red"); abline(h=0)
 # 
+
 
