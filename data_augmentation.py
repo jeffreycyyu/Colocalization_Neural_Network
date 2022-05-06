@@ -1,3 +1,102 @@
+class AUGMENT_DATA:
+    """
+    Data augmentation.
+    """ 
+    def __init__(
+        self,
+        augmentation_type: int,
+        extremum_window: int,
+        neighborhood_window: int,
+        name: str = 'augment_data'
+        ):
+        """
+        Argument(s):
+            augmentation_type: integer denoting type of data augmentation to preform; type 1 sets the local minima equal to the second lowest value in the neighborhood; type n for n > 1 switches p-values of the local minima with the nth lowest p-value in the neighborhood 
+            extremum_window: integer denoting how far to look upsteam/downstream when evaluating whether a loci is a local minima
+            neighborhood_window: integer denoting how far to look for a replacement value when local minima is augmented
+            name: name
+        """
+        print('AUGMENT_DATA.__init__')
+        
+        self.augmentation_type = augmentation_type
+        self.extremum_window = extremum_window
+        self.neighborhood_window = neighborhood_window  
+        self._name = name
+        
+    def __call__(self, input_sequences):
+        """
+        Argument(s):
+            input_sequence: 1-D input sequence of p-values sorted by position
+        Returns:
+            self.output_sequence: output of the multihead attention network
+        """
+        print('AUGMENT_DATA.__call__')
+        
+        #initialize empty dataframe
+        dataframe = pd.DataFrame()
+        
+        #append origional p-values to dataframe
+        dataframe['trait'] = input_sequences
+        
+        #find all local minima and report p-values; value is NaN if loci is not a local minima
+        dataframe['minimum'] = dataframe.iloc[argrelextrema(dataframe.trait.values,
+                                                     np.less_equal,
+                                                     order=self.extremum_window)[0]]['trait']
+        
+        #row indices of all local minima
+        minima_indices = np.where(~np.isnan(dataframe['minimum']))[0]
+        
+        #distinguish between type 1 and type n (where n>1) data augmentations
+        if self.augmentation_type == 1:
+            
+            #set all local minima in the sequence equal to second lowest p-value in the neighborhood
+            for i in range(0, len(minima_indices)):
+                #replace minima as
+                dataframe['trait'][minima_indices[i]] = sorted(dataframe['trait']
+                                                        [minima_indices[i] - self.neighborhood_window:
+                                                         minima_indices[i] + self.neighborhood_window],
+                                                               reverse = True)[1]
+            
+            #return augmented sequence
+            return dataframe['trait']
+            
+        #distinguish between type 1 and type n (where n>1) data augmentations
+        elif self.augmentation_type > 1:
+            
+            #store origional trait p-values for importing later
+            trait_storage = list(dataframe['trait'])
+            
+            #switch p-values for local minima in the sequence with the nth lowest p-value
+            for i in range(0, len(minima_indices)):
+                
+                #local minima to be switched
+                local_minima = dataframe['trait'][minima_indices[i]]
+                
+                #nth lowest p-value in the neighborhood
+                nth_minima = sorted(dataframe['trait'][minima_indices[i] - self.neighborhood_window:
+                                                                 minima_indices[i] + self.neighborhood_window],
+                                    reverse = True)[1]
+                
+                #set local minima to nth lowest p-value in the neighborhood
+                dataframe['trait'][minima_indices[i]] = nth_minima
+                
+                #set nth lowest p-value in the neighborhood to local minima
+                dataframe['trait'][trait_storage.index(nth_minima)] = local_minima
+                
+                #return augmented sequence
+                return dataframe['trait']
+        
+        #error if integer is negative
+        else: raise ValueError('augmentation_type was not a positive integer')
+    
+
+    
+    
+    
+    
+    
+    
+
 import math
 import sys
 import numpy as np
@@ -31,7 +130,10 @@ test_dataframe = pd.read_csv(csv_pathname, sep='\t')
 
 test_dataframe.columns.name = None
 
+
+#this will be the input to the function
 print(test_dataframe)
+
 
 #example plot of first 1000 positions
 %matplotlib qt
@@ -39,169 +141,25 @@ plt.scatter(test_dataframe['Position'][0:1000], -1*np.log10(test_dataframe['trai
 # plt.scatter(test_dataframe['Position'][0:1000], -1*np.log10(test_dataframe['trait_2'][0:1000]), s=1)
 # plt.scatter(test_dataframe['Position'][0:1000], -1*np.log10(test_dataframe['trait_3'][0:1000]), s=1)
 plt.show()
-plt.close()
-
-
-#====data augmentation
-
-#dataframe of p values on the -log10 scale for 40 positions
-df = pd.DataFrame(-1*np.log10(test_dataframe['trait_1'][0:40]))
-#df = pd.DataFrame(test_dataframe['trait_1'][0:999])
-
-
-# number of points to be checked upstream and downstream
-n = 10  
-
-#find local maxima/minima
-df['min'] = df.iloc[argrelextrema(df.trait_1.values, np.less_equal,
-                    order=n)[0]]['trait_1']
-df['max'] = df.iloc[argrelextrema(df.trait_1.values, np.greater_equal,
-                    order=n)[0]]['trait_1']
-
-
-# Plot results
-plt.scatter(df.index, df['min'], c='r')
-plt.scatter(df.index, df['max'], c='g')
-plt.plot(df.index, df['trait_1'])
-plt.show()
 #plt.close()
 
-#this is a dataframe with 3 columns representing: trait_1's -log10(p-value); minimum value (either NaN or smae as in trait_1); maximum value (either NaN or smae as in trait_1)
-print(df)
 
-#======
-
-#this is how upstream or downstream a local maxima/minima considers it's 'neighborhood'
-span_length = 5
-#this is the row index of all maxima
-maxima_indices = np.where(~np.isnan(df['max']))[0]
-
-#============type 1
-
-
-#for every local maxima of trait_1's -log10(p_value), set the local maxima to be equal to the second highest point within the 'neighborhood (i.e., now maxima is 'tied' for first)
-for i in range(0, len(maxima_indices)):
-    df['trait_1'][maxima_indices[i]] = sorted(df['trait_1']
-                                              [maxima_indices[i] - span_length:maxima_indices[i] + span_length],
-                                              reverse = True)[1]
-
-
-#same plot but now local maxima should be equal to second highest -log10(p_value) within the region
-plt.scatter(df.index, df['min'], c='r')
-plt.scatter(df.index, df['max'], c='g')
-plt.plot(df.index, df['trait_1'])
-plt.show()
-#plt.close()
-
-#same dataframe but now local maxima should be equal to second highest -log10(p_value) within the region (note: do not use anything from 'max' and 'min' columns)
-print(df)
+#====data augmentation TEST
 
 
 
+augmentation_test = AUGMENT_DATA(1, 10, 5)
 
+augmented_data = augmentation_test(test_dataframe['trait_1'])
 
+print('origional')
+test_dataframe['trait_1']
 
+print('test')
+augmented_data
+    
+    
+    
 
-
-
-import math
-import sys
-import numpy as np
-import pandas as pd
-from scipy.signal import argrelextrema
-import random
-import matplotlib.pyplot as plt
-from pandas import DataFrame as df
-import tensorflow as tf
-import tensorflow_probability as tfp
-from tensorflow.keras.layers import Input, Embedding, Activation, Add, Conv1D, Conv1DTranspose, LSTM, Layer, LayerNormalization, ReLU, Embedding, Bidirectional
-from keras.preprocessing.sequence import pad_sequences
-import tensorflow_addons as tfa
-from tensorflow.keras.models import Model, Sequential
-from keras.utils.vis_utils import plot_model
-import edward2 as ed
-import warnings
-
-#type 2 data augmentation (switch lowest p-value with second lowest (i.e., set 1st = 2nd and 2nd = 1st)
-#type n data augmentation: same as type 2, no code needed
-
-from ipynb.fs.full.test_data import CSV_TO_ENCODED_PADDED_INPUT
-
-random.seed(25252)
-
-csv_pathname = '/Users/jeffreyyu/Documents/Sladek/colocalization_neural_network/simulated_gwas.txt'
-
-my_input = CSV_TO_ENCODED_PADDED_INPUT(csv_pathname)
-
-
-test_dataframe = pd.read_csv(csv_pathname, sep='\t')
-
-test_dataframe.columns.name = None
-
-print(test_dataframe)
-
-#example plot of first 1000 positions
-%matplotlib qt
-plt.scatter(test_dataframe['Position'][0:1000], -1*np.log10(test_dataframe['trait_1'][0:1000]), s=1)
-# plt.scatter(test_dataframe['Position'][0:1000], -1*np.log10(test_dataframe['trait_2'][0:1000]), s=1)
-# plt.scatter(test_dataframe['Position'][0:1000], -1*np.log10(test_dataframe['trait_3'][0:1000]), s=1)
-plt.show()
-plt.close()
-
-
-#====data augmentation
-
-#dataframe of p values on the -log10 scale for 40 positions
-df = pd.DataFrame(-1*np.log10(test_dataframe['trait_1'][0:100]))
-#df = pd.DataFrame(test_dataframe['trait_1'][0:999])
-
-
-# number of points to be checked upstream and downstream
-n = 10  
-
-#find local maxima/minima
-df['min'] = df.iloc[argrelextrema(df.trait_1.values, np.less_equal,
-                    order=n)[0]]['trait_1']
-df['max'] = df.iloc[argrelextrema(df.trait_1.values, np.greater_equal,
-                    order=n)[0]]['trait_1']
-
-
-# Plot results
-plt.scatter(df.index, df['min'], c='r')
-plt.scatter(df.index, df['max'], c='g')
-plt.plot(df.index, df['trait_1'])
-plt.show()
-#plt.close()
-
-#this is a dataframe with 3 columns representing: trait_1's -log10(p-value); minimum value (either NaN or smae as in trait_1); maximum value (either NaN or smae as in trait_1)
-print(df)
-
-#======
-
-#this is how upstream or downstream a local maxima/minima considers it's 'neighborhood'
-span_length = 5
-#this is the row index of all maxima
-maxima_indices = np.where(~np.isnan(df['max']))[0]
-
-
-
-#============type 2; same for all type n where n > 1
-
-#set since cannot do '.index'-ing on a column
-storage_column = list(df['trait_1'])
-
-for i in range(0, len(maxima_indices)):
-    temporary_numeric_first_max = df['trait_1'][maxima_indices[i]]
-    temporary_numeric_nth_max = sorted(df['trait_1'][maxima_indices[i] - span_length:maxima_indices[i] + span_length], reverse = True)[1]
-    df['trait_1'][maxima_indices[i]] = temporary_numeric_nth_max
-    df['trait_1'][storage_column.index(temporary_numeric_nth_max)] = temporary_numeric_first_max
-
-
-plt.scatter(df.index, df['min'], c='r')
-plt.scatter(df.index, df['max'], c='g')
-plt.plot(df.index, df['trait_1'])
-plt.show()
-
-print(df)
     
     
