@@ -75,7 +75,7 @@ class AUGMENT_DATA:
                 #nth lowest p-value in the neighborhood
                 nth_minima = sorted(dataframe['trait'][minima_indices[i] - self.neighborhood_window:
                                                                  minima_indices[i] + self.neighborhood_window],
-                                    reverse = True)[1]
+                                    reverse = True)[self.augmentation_type - 1]
                 
                 #set local minima to nth lowest p-value in the neighborhood
                 dataframe['trait'][minima_indices[i]] = nth_minima
