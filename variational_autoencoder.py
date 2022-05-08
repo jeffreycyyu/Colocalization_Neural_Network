@@ -120,5 +120,3 @@ class VARIATIONAL_AUTOENCODER(tf.keras.Model):
     def __call__(self, inputs, training=False):
         #first encode, then sample from encoded latent representation distribution, then decode, finally sample from decoded reconstruction distribution
         return self.decoder(self.encoder(inputs).sample()).sample()
-    
-    
