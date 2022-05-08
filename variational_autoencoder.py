@@ -15,7 +15,7 @@ class VARIATIONAL_AUTOENCODER(tf.keras.Model):
         """
         print('AUGMENT_DATA.__init__')
         super().__init__(name = name)
-        super(VAE, self).__init__()
+        super(VARIATIONAL_AUTOENCODER, self).__init__()
 
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -50,7 +50,5 @@ class VARIATIONAL_AUTOENCODER(tf.keras.Model):
     
 
 print(test_input)
-test_VAE = VARIATIONAL_AUTOENCODER(60, 919)
+test_VAE = VARIATIONAL_AUTOENCODER(60, 64, 919)
 print(test_VAE(test_input))
-
-    
