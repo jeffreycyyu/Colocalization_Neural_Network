@@ -28,7 +28,7 @@ class AUGMENT_DATA:
         Argument(s):
             input_sequence: 1-D input sequence of p-values sorted by position
         Returns:
-            self.output_sequence: output of the multihead attention network
+            self.output_sequence: augmented input sequence
         """
         print('AUGMENT_DATA.__call__')
         
