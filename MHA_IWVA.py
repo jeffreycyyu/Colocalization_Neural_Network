@@ -127,7 +127,7 @@ class MULTI_HEAD_ATTENTION_ENCODER(tf.keras.layers.Layer):
     
     
     
-class MULTI_HEAD_ATTENTION_INPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.Model):
+class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.Model):
     def __init__(
         self,
         input_dim: int,
@@ -140,7 +140,7 @@ class MULTI_HEAD_ATTENTION_INPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         mha_activation_function: str = 'ReLU',
         n_monte_carlo: int = 1,
         n_importance: int = 1,
-        name: str = 'variational_autoencoder'
+        name: str = 'multi_head_attention_importance_weighed_variational_autoencoder'
         ):
         """
         Argument(s):
@@ -161,7 +161,7 @@ class MULTI_HEAD_ATTENTION_INPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         """
         print('AUGMENT_DATA.__init__')
         super().__init__(name = name)
-        super(VARIATIONAL_AUTOENCODER, self).__init__()
+        super(MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER, self).__init__()
 
         self._name = name
         
@@ -276,6 +276,7 @@ class MULTI_HEAD_ATTENTION_INPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
     def __call__(self, inputs, training=False):
         #first encode, then sample from encoded latent representation distribution, then decode, finally sample from decoded reconstruction distribution
         return self.decoder(self.encoder(inputs).sample()).sample()
+    
     
     
     
