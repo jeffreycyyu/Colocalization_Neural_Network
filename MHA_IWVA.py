@@ -1,4 +1,6 @@
 #MULTI-HEAD ATTENTION IMPORTANCE WEIGHED VARIATIONAL AUTOENCODER
+
+
 class MULTI_HEAD_ATTENTION_ENCODER(tf.keras.layers.Layer):
     """
     Multi-head attention network with positional encoding (BERT).
@@ -44,7 +46,7 @@ class MULTI_HEAD_ATTENTION_ENCODER(tf.keras.layers.Layer):
         Argument(s):
             x: input
         Returns:
-            layer_normalized: multi-head attention block output
+            norm_2: multi-head attention block output
         """
         #"Multi-Head Attention" layer
         multihead = tfa.layers.MultiHeadAttention(
@@ -94,7 +96,7 @@ class MULTI_HEAD_ATTENTION_ENCODER(tf.keras.layers.Layer):
         Argument(s):
             input_array: input
         Returns:
-            self.output_array: output of the multihead attention network
+            output_array: output of the multihead attention network
         """
         print('MULTI_HEAD_ATTENTION.__call__')
         
@@ -124,6 +126,7 @@ class MULTI_HEAD_ATTENTION_ENCODER(tf.keras.layers.Layer):
         
         #output: transformer encoder output
         return output_array
+    
     
     
     
@@ -276,11 +279,5 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
     def __call__(self, inputs, training=False):
         #first encode, then sample from encoded latent representation distribution, then decode, finally sample from decoded reconstruction distribution
         return self.decoder(self.encoder(inputs).sample()).sample()
-    
-    
-    
-    
-
-    
     
     
