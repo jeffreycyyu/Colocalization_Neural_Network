@@ -3,7 +3,7 @@
 
 class MULTI_HEAD_ATTENTION_ENCODER(tf.keras.layers.Layer):
     """
-    Multi-head attention network with positional encoding (BERT).
+    Multi-head attention network with positional encoding.
     """
     def __init__(
         self,
