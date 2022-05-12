@@ -166,7 +166,7 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         self,
         latent_dim: int,
         hidden_dim: int,
-        mha_n_traits: int,
+        n_traits: int,
         mha_n_outputs: int = 128,
         mha_model_dim: int = 64,
         mha_n_blocks: int = 6,
@@ -202,8 +202,9 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         
         self.latent_dim = latent_dim
         self.hidden_dim = hidden_dim
+        self.n_traits = n_traits
 
-        self.mha_n_traits = mha_n_traits
+        self.mha_n_traits = n_traits
         self.mha_n_outputs = mha_n_outputs
         self.mha_model_dim = mha_model_dim
         self.mha_n_blocks = mha_n_blocks
