@@ -161,6 +161,7 @@ class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
 
 
 #MULTI-HEAD ATTENTION IMPORTANCE WEIGHED VARIATIONAL AUTOENCODER
+
 class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.Model):
     def __init__(
         self,
@@ -314,7 +315,8 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
     
     def __call__(self, inputs, training=False):
         #first encode, then sample from encoded latent representation distribution, then decode, finally sample from decoded reconstruction distribution
-        return self.decoder(self.encoder(inputs).sample()).sample()   
+        return self.decoder(self.encoder(inputs).sample()).sample()
+    
     
 
 #TEST INPUT
