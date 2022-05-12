@@ -161,8 +161,6 @@ class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
 
 
 #MULTI-HEAD ATTENTION IMPORTANCE WEIGHED VARIATIONAL AUTOENCODER
-
-
 class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.Model):
     def __init__(
         self,
@@ -181,6 +179,7 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         """
         Argument(s):
             latent_dim: dimensions of latent space representation
+            hidden_dim: dimension of hidden nodes
             
             mha_n_traits: the multi-head attention block's number of traits to be annalyzed (number of channels)
             mha_n_outputs: the multi-head attention block's number of outputs (final layer Conv1D's filter size)
@@ -219,7 +218,7 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
     def encoder(self, x):
         
         #build multi-head attention layer model
-        multi_head_attention = MULTI_HEAD_ATTENTION(
+        multi_head_attention_encoder = MULTI_HEAD_ATTENTION_ENCODER(
             n_traits = self.mha_n_traits,
             n_outputs = self.mha_n_outputs,
             model_dim = self.mha_model_dim,
@@ -228,7 +227,7 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
             activation_function = self.mha_activation_function)
         
         #execute multi-head attention model
-        output_mha = multi_head_attention(x)
+        output_mha = multi_head_attention_encoder(x)
         
         x = tf.keras.layers.Dense(self.hidden_dim, activation=tf.nn.relu, dtype=tf.float32)(output_mha)
         x = tf.keras.layers.Dense(self.hidden_dim, activation=tf.nn.relu, dtype=tf.float32)(x)
@@ -247,7 +246,7 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         layers = tf.keras.Sequential([
             tf.keras.layers.Dense(4*self.latent_dim, activation=tf.nn.relu, dtype=tf.float32), #CHANGE_ME self.hidden_dim to 4*self.latent_dim
             tf.keras.layers.Dense(4*self.latent_dim, activation=tf.nn.relu, dtype=tf.float32), #CHANGE_ME self.hidden_dim to 4*self.latent_dim
-            tf.keras.layers.Dense(4*self.latent_dim, dtype=tf.float32) #CHANGE_ME self.hidden_dim to 4*self.latent_dim
+            tf.keras.layers.Dense(self.n_traits, dtype=tf.float32) #CHANGE_ME self.hidden_dim to 4*self.latent_dim
             ])(x)
         #output: Bernoulli distributed output
         return tfd.Bernoulli(logits=layers)
@@ -314,8 +313,7 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
     
     def __call__(self, inputs, training=False):
         #first encode, then sample from encoded latent representation distribution, then decode, finally sample from decoded reconstruction distribution
-        return self.decoder(self.encoder(inputs).sample()).sample()
-    
+        return self.decoder(self.encoder(inputs).sample()).sample()   
     
 
 #TEST INPUT
@@ -366,12 +364,6 @@ print(len(new_list[3]))
 print(len(new_list[4]))
 print(len(new_list[5]))
 
-#print(new_list)
-
-#rename
-test_input = new_list
-
-
 
 #RAW TEST
 
@@ -380,12 +372,13 @@ def testing(x):
     #ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER
     hidden_dim = 64
     latent_dim = 32
+    n_outputs = 3
     
     
     multi_head_attention_encoder = MULTI_HEAD_ATTENTION_ENCODER(
         n_traits = 3,
-        n_outputs = 128,
-        model_dim = 64,
+        n_outputs = 64,
+        model_dim = 16,
         n_blocks = 6,
         n_heads = 8,
         activation_function = 'ReLU')
@@ -420,7 +413,7 @@ def testing(x):
     print('master de-dense1') #DELETE_ME
     tf.keras.layers.Dense(4*latent_dim, activation=tf.nn.relu, dtype=tf.float32)(x)
     print('master de-dense2') #DELETE_ME
-    layers = tf.keras.layers.Dense(4*latent_dim, dtype=tf.float32)(x)
+    layers = tf.keras.layers.Dense(n_traits, dtype=tf.float32)(x)
     print('master de-dense3') #DELETE_ME
     
     final_decoder = tfd.Bernoulli(logits=layers)
@@ -433,7 +426,6 @@ def testing(x):
 
 output = testing(test_input)
 print(output)
-
 
 
 #FUNCTIONAL TEST
