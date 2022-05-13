@@ -1,5 +1,4 @@
 #DEPENDENCIES
-
 import math
 import sys
 import numpy as np
@@ -21,11 +20,8 @@ import edward2 as ed
 import warnings
 
 
-
-
-#MULTI-HEAD ATTENTION
-
-class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
+#MULTI_HEAD_ATTENTION_ENCODER
+class MULTI_HEAD_ATTENTION_ENCODER(tf.keras.layers.Layer):
     """
     Multi-head attention network with positional encoding.
     """
@@ -53,6 +49,9 @@ class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
         super().__init__(name = name)
         super(MULTI_HEAD_ATTENTION_ENCODER, self).__init__()
         print('super(MULTI_HEAD_ATTENTION_ENCODER).__init__()')
+        
+        #clarify that the layer should support masking (since variable length sequences were zero padded)
+        self.supports_masking = True
         
         self._name = name
         
@@ -128,23 +127,12 @@ class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
         """
         print('MULTI_HEAD_ATTENTION.__call__')
         
-        #zero pad input list of samples
-        padded_test_input = pad_sequences(input_array, padding='post', dtype='float32')
-        
-        #initialize list to store zipped data into
-        zipped_padded_test_input = []
-        #zip the data to convert 'list of channels which are lists of sequences' into 'lists of sequences which are lists of channels'
-        for i in range(int(len(padded_test_input)/self.n_traits)):
-            #zip every set of n_traits together (e.g., if 3 traits/channels, then we want the first 3 sequences representing the three channels for the first gene segment to be zipped, then next 3, ...)
-            sub_zipped_padded_test_input = [list(l) for l in zip(padded_test_input[0+i*3], padded_test_input[1+i*3], padded_test_input[2+i*3])]
-            #append to master list
-            zipped_padded_test_input.append(sub_zipped_padded_test_input)
         
         #add postitional encoding
-        position_embedding_layer = Embedding(len(zipped_padded_test_input[0]), self.n_traits, mask_zero=True)
-        position_indices = tf.range(len(zipped_padded_test_input[0]))
+        position_embedding_layer = Embedding(len(input_array[0]), self.n_traits, mask_zero=True)
+        position_indices = tf.range(len(input_array[0]))
         positional_encoding = position_embedding_layer(position_indices)
-        x = zipped_padded_test_input + positional_encoding
+        x = input_array + positional_encoding
         
         #repeat multi-head attention block multiple times
         for _ in range(self.n_blocks): x = self.block(x)
@@ -160,13 +148,12 @@ class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
         
         #output: transformer encoder output
         return output_array
+    
 
 
 
 
-
-#MULTI-HEAD ATTENTION IMPORTANCE WEIGHED VARIATIONAL AUTOENCODER
-
+#MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER
 class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.Model):
     def __init__(
         self,
@@ -324,13 +311,12 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         #first encode, then sample from encoded latent representation distribution, then decode, finally sample from decoded reconstruction distribution
         return self.decoder(self.encoder(inputs).sample()).sample()
     
-
-
-
-
     
-#TEST INPUT
+    
 
+
+
+#GENERATE TEST INPUT DATA
 #set random seed
 random.seed(25252)
 
@@ -383,76 +369,57 @@ test_input = new_list
 
 
 
-#RAW TEST
 
-def testing(x):
-    
-    #ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER
-    hidden_dim = 64
-    latent_dim = 32
-    n_traits=3
-    
-    
-    multi_head_attention_encoder = MULTI_HEAD_ATTENTION_ENCODER(
-        n_traits = 3,
-        n_outputs = 64,
-        model_dim = 16,
-        n_blocks = 6,
-        n_heads = 8,
-        activation_function = 'ReLU')
-    print('master mha1') #DELETE_ME
-    output_mha = multi_head_attention_encoder(x)
-    print('master mha2') #DELETE_ME
+#PREPROCESS
+def PREPROCESS(input_array, n_traits):
+    #zero pad input list of samples
+    padded_test_input = pad_sequences(input_array, padding='post', dtype='float32')
 
-
-    x = tf.keras.layers.Dense(hidden_dim, activation=tf.nn.relu, dtype=tf.float32)(output_mha)
-    print('master dense1') #DELETE_ME
-    x = tf.keras.layers.Dense(hidden_dim, activation=tf.nn.relu, dtype=tf.float32)(x)
-    print('master dense2') #DELETE_ME
-    mapped = tf.keras.layers.Dense(2*int(latent_dim), dtype=tf.float32)(x)
-    print('master dense3') #DELETE_ME
-    
-
-    #output: multi-variate normal distributed latent representation
-    final_encoder = tfd.MultivariateNormalDiag(
-        loc=mapped[..., :int(latent_dim)],
-        scale_diag=tf.nn.softplus(mapped[..., int(latent_dim):]
-        ))
-    print('master MultivariateNormalDiag') #DELETE_ME
-    
-    sample_final_encoder = final_encoder.sample()
-    print('master sample_final_encoder')
-    
-    #DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER-DECODER
-    
-    x = sample_final_encoder
-    
-    tf.keras.layers.Dense(4*latent_dim, activation=tf.nn.relu, dtype=tf.float32)(x)
-    print('master de-dense1') #DELETE_ME
-    tf.keras.layers.Dense(4*latent_dim, activation=tf.nn.relu, dtype=tf.float32)(x)
-    print('master de-dense2') #DELETE_ME
-    
-    mean = tf.keras.layers.Dense(n_traits, dtype=tf.float32)(x)
-    print('master de-dense3') #DELETE_ME
-    
-    variance = tf.ones(tf.shape(mean), dtype=tf.float32)
-    print('master normal mean and variance') #DELETE_ME
-    final_decoder = tfd.Normal(loc=mean, scale=variance)
-    
-    sample_final_decoder = final_decoder.sample()
-    print('master sample_final_decoder')
-    
-    return sample_final_decoder
-
-output = testing(test_input)
-print(output)
+    #initialize list to store zipped data into
+    zipped_padded_test_input = []
+    #zip the data to convert 'list of channels which are lists of sequences' into 'lists of sequences which are lists of channels'
+    for i in range(int(len(padded_test_input)/n_traits)):
+        #zip every set of n_traits together (e.g., if 3 traits/channels, then we want the first 3 sequences representing the three channels for the first gene segment to be zipped, then next 3, ...)
+        sub_zipped_padded_test_input = [list(l) for l in zip(padded_test_input[0+i*3], padded_test_input[1+i*3], padded_test_input[2+i*3])]
+        #append to master list
+        zipped_padded_test_input.append(sub_zipped_padded_test_input)
+        
 
 
 
 
 
-#FUNCTIONAL TEST
+#MODEL TESTING
+vae = MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(32, 18, 3)
 
-test_full_function = MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(32, 18, 3)
-test_full_function_out = test_full_function(test_input)
-print(test_full_function_out)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
+kl_loss_fn = tf.keras.losses.kl_divergence
+
+loss_metric = tf.keras.metrics.Mean()
+
+x_train = PREPROCESS(test_input, 3)
+
+train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
+train_dataset = train_dataset.shuffle(buffer_size=1024).batch(4)
+
+epochs = 10
+
+# Iterate over epochs.
+for epoch in range(epochs):
+    print("Start of epoch %d" % (epoch,))
+
+    # Iterate over the batches of the dataset.
+    for step, x_batch_train in enumerate(train_dataset):
+        with tf.GradientTape() as tape:
+            reconstructed = vae(x_batch_train)
+            # Compute reconstruction loss
+            loss = kl_loss_fn(x_batch_train, reconstructed)
+            loss += sum(vae.losses)  # Add KLD regularization loss
+
+        grads = tape.gradient(loss, vae.trainable_weights)
+        optimizer.apply_gradients(zip(grads, vae.trainable_weights))
+
+        loss_metric(loss)
+        
+        print("step %d: mean loss = %.4f" % (step, loss_metric.result()))
+
