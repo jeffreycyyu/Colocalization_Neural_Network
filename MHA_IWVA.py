@@ -1,4 +1,5 @@
 #DEPENDENCIES
+
 import math
 import sys
 import numpy as np
@@ -18,6 +19,8 @@ from tensorflow.keras.models import Model, Sequential
 from keras.utils.vis_utils import plot_model
 import edward2 as ed
 import warnings
+
+
 
 
 #MULTI-HEAD ATTENTION
@@ -160,6 +163,8 @@ class MULTI_HEAD_ATTENTION(tf.keras.layers.Layer):
 
 
 
+
+
 #MULTI-HEAD ATTENTION IMPORTANCE WEIGHED VARIATIONAL AUTOENCODER
 
 class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.Model):
@@ -245,13 +250,16 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
     def decoder(self, x): #CHANGE_ME make like a transformers decoder layer
         
         #build model
-        layers = tf.keras.Sequential([
+        mean = tf.keras.Sequential([
             tf.keras.layers.Dense(4*self.latent_dim, activation=tf.nn.relu, dtype=tf.float32), #CHANGE_ME self.hidden_dim to 4*self.latent_dim
             tf.keras.layers.Dense(4*self.latent_dim, activation=tf.nn.relu, dtype=tf.float32), #CHANGE_ME self.hidden_dim to 4*self.latent_dim
             tf.keras.layers.Dense(self.n_traits, dtype=tf.float32) #CHANGE_ME self.hidden_dim to 4*self.latent_dim
             ])(x)
-        #output: Bernoulli distributed output
-        return tfd.Bernoulli(logits=layers)
+        variance = tf.ones(tf.shape(mean), dtype=tf.float32)
+        #output: normal distributed output
+        return tfd.Normal(loc=mean, scale=variance)
+        # #output: Bernoulli distributed output
+        # return tfd.Bernoulli(logits=layers)
     
     
     def assign_prior(self):
@@ -265,8 +273,7 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
     def compute_loss(self, x):
         # #check if input is in '[batch size, number of loci per segment, channels]' format
         assert len(x.shape) == 3
-        #convert to tensor
-        x = tf.identity(x)
+
         #create a tensor by repeating input 'x' M*K-times horizontally; default is no tiling
         x = tf.tile(x, [self.n_monte_carlo * self.n_importance, 1, 1])
 
@@ -317,8 +324,11 @@ class MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(tf.keras.M
         #first encode, then sample from encoded latent representation distribution, then decode, finally sample from decoded reconstruction distribution
         return self.decoder(self.encoder(inputs).sample()).sample()
     
-    
 
+
+
+
+    
 #TEST INPUT
 
 #set random seed
@@ -367,6 +377,11 @@ print(len(new_list[3]))
 print(len(new_list[4]))
 print(len(new_list[5]))
 
+#rename
+test_input = new_list
+
+
+
 
 #RAW TEST
 
@@ -375,7 +390,7 @@ def testing(x):
     #ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER-ENCODER
     hidden_dim = 64
     latent_dim = 32
-    n_outputs = 3
+    n_traits=3
     
     
     multi_head_attention_encoder = MULTI_HEAD_ATTENTION_ENCODER(
@@ -416,11 +431,13 @@ def testing(x):
     print('master de-dense1') #DELETE_ME
     tf.keras.layers.Dense(4*latent_dim, activation=tf.nn.relu, dtype=tf.float32)(x)
     print('master de-dense2') #DELETE_ME
-    layers = tf.keras.layers.Dense(n_traits, dtype=tf.float32)(x)
+    
+    mean = tf.keras.layers.Dense(n_traits, dtype=tf.float32)(x)
     print('master de-dense3') #DELETE_ME
     
-    final_decoder = tfd.Bernoulli(logits=layers)
-    print('master Bernoulli') #DELETE_ME
+    variance = tf.ones(tf.shape(mean), dtype=tf.float32)
+    print('master normal mean and variance') #DELETE_ME
+    final_decoder = tfd.Normal(loc=mean, scale=variance)
     
     sample_final_decoder = final_decoder.sample()
     print('master sample_final_decoder')
@@ -431,11 +448,11 @@ output = testing(test_input)
 print(output)
 
 
+
+
+
 #FUNCTIONAL TEST
 
 test_full_function = MULTI_HEAD_ATTENTION_IMPORTANCE_WEIGHED_VARIATIONAL_AUTOENCODER(32, 18, 3)
-
 test_full_function_out = test_full_function(test_input)
-
 print(test_full_function_out)
-
