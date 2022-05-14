@@ -370,23 +370,6 @@ test_input = new_list
 
 
 
-#PREPROCESS
-def PREPROCESS(input_array, n_traits):
-    #zero pad input list of samples
-    padded_test_input = pad_sequences(input_array, padding='post', dtype='float32')
-
-    #initialize list to store zipped data into
-    zipped_padded_test_input = []
-    #zip the data to convert 'list of channels which are lists of sequences' into 'lists of sequences which are lists of channels'
-    for i in range(int(len(padded_test_input)/n_traits)):
-        #zip every set of n_traits together (e.g., if 3 traits/channels, then we want the first 3 sequences representing the three channels for the first gene segment to be zipped, then next 3, ...)
-        sub_zipped_padded_test_input = [list(l) for l in zip(padded_test_input[0+i*3], padded_test_input[1+i*3], padded_test_input[2+i*3])]
-        #append to master list
-        zipped_padded_test_input.append(sub_zipped_padded_test_input)
-        
-
-
-
 
 
 #MODEL TESTING
