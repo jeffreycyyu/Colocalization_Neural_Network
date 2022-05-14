@@ -69,20 +69,31 @@ def PREPROCESS_WITH_MASKING(input_array, n_traits):
         
     
     #unzip sequence
-    print(len(final_input_list))
-    print(len(final_input_list[0]))
-    print(len(final_input_list[0][0]))
-    #print(final_input_list[0])
-    print('unzipping, want 120, then 675 675 675 then something not 675, then 3 3')
     unzipped = [list(zip(*l)) for l in final_input_list]
     unzipped = [list(item) for sublist in unzipped for item in sublist]
     
     #zero pad input list of samples
     # final_input_list = final_input_list.tolist()
-    padded_final_input_list = pad_sequences(final_input_list, padding='post', dtype='float32')
+    padded_final_input_list = pad_sequences(unzipped, padding='post', dtype='float32')
 
     
-    return padded_final_input_list
+    padded_final_input_list = padded_final_input_list.tolist()
+    
+    
+    
+    
+    #initialize list to store zipped data into
+    final_zipped_padded_test_input = []
+    #zip the data to convert 'list of channels which are lists of sequences' into 'lists of sequences which are lists of channels'
+    for i in range(int(len(padded_final_input_list)/n_traits)):
+        #zip every set of n_traits together (e.g., if 3 traits/channels, then we want the first 3 sequences representing the three channels for the first gene segment to be zipped, then next 3, ...)
+        sub_final_zipped_padded_test_input = [list(l) for l in zip(padded_final_input_list[0+i*3], padded_final_input_list[1+i*3], padded_final_input_list[2+i*3])]
+        #append to master list
+        final_zipped_padded_test_input.append(sub_final_zipped_padded_test_input)
 
+    
+    
+    
+    return final_zipped_padded_test_input
 
 
