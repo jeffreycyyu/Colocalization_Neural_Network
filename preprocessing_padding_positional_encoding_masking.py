@@ -1,5 +1,5 @@
 #PREPROCESS
-def PREPROCESS_WITH_MASKING(input_array, n_traits):
+def PREPROCESS(input_array, n_traits):
 
     #initialize list to store zipped data into
     zipped_padded_test_input = []
@@ -34,16 +34,16 @@ def PREPROCESS_WITH_MASKING(input_array, n_traits):
         input_array_masked = np.copy(input_sequence_array)
 
 
-        #set input to [MASK] which is the last token for the 90% of tokens
-        #leave 10% unchanged; representing the unmodified 10% of 15% loci that are masked
+        #set input to [MASK] which is the last token for the 90% of tokens (leave 10% unchanged; representing the unmodified 10% of 15% loci that are masked)
         remain_masked = np.random.rand(*input_sequence_array.shape[0:1]) < 0.90
         remain_masked = np.dstack([remain_masked, remain_masked, remain_masked])
         remain_masked = remain_masked[0]
         inp_mask_2mask = inp_mask & remain_masked
-
+        
+        #set 10% to a random number between 0 and 1
         random_array = np.random.uniform(0, 1, input_sequence_array.shape)
         input_array_masked[inp_mask_2mask] = random_array[inp_mask_2mask]  # mask token is the last in the dict
-
+        
         #append to output
         final_input_list.append(input_array_masked.tolist())
         
@@ -68,7 +68,5 @@ def PREPROCESS_WITH_MASKING(input_array, n_traits):
         final_zipped_padded_test_input.append(sub_final_zipped_padded_test_input)
     
     
-    #output: masked and zero padded data in a list with the shape [number of LD blocks, number of loci (variable length), number of traits]
+    #output: masked and zero padded data in a list with the shape [number of LD blocks, maximum number of loci (equal length since zero paddng is preformed), number of traits]
     return final_zipped_padded_test_input
-
-
