@@ -457,23 +457,32 @@ kl_loss_fn = tf.keras.losses.kl_divergence
 
 loss_metric = tf.keras.metrics.Mean()
 
-x_train = PREPROCESS(test_input, 3)
+x_train = PREPROCESS_WITH_MASKING(test_input, 3)
+y_train = PREPROCESS_WITHOUT_MASKING(test_input, 3)
+
 
 train_dataset = tf.data.Dataset.from_tensor_slices(x_train)
-train_dataset = train_dataset.shuffle(buffer_size=1024).batch(4)
+train_dataset = train_dataset.batch(4)
+
+verification_dataset = tf.data.Dataset.from_tensor_slices(y_train)
+verification_dataset = verification_dataset.batch(4)
 
 epochs = 10
 
-# Iterate over epochs.
+#iterate over epochs.
 for epoch in range(epochs):
     print("Start of epoch %d" % (epoch,))
-
-    # Iterate over the batches of the dataset.
-    for step, x_batch_train in enumerate(train_dataset):
+    
+    #initialize counter (do not use enumerate since two datasets exist
+    step = -1
+    #iterate over the batches of the dataset, use both masked and unmasked datasets to check for masked value loss
+    for x_batch_train, y_batch_train in zip(train_dataset, verification_dataset):
         with tf.GradientTape() as tape:
+            
+            step += 1
             reconstructed = vae(x_batch_train)
-            # Compute reconstruction loss
-            loss = kl_loss_fn(x_batch_train, reconstructed)
+            #compute reconstruction loss
+            loss = kl_loss_fn(y_batch_train, reconstructed)
             loss += sum(vae.losses)  # Add KLD regularization loss
 
         grads = tape.gradient(loss, vae.trainable_weights)
@@ -482,4 +491,5 @@ for epoch in range(epochs):
         loss_metric(loss)
         
         print("step %d: mean loss = %.4f" % (step, loss_metric.result()))
+        
 
